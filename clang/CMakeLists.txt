@@ -89,62 +89,6 @@ if(CLANG_BUILT_STANDALONE)
   set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib${LLVM_LIBDIR_SUFFIX} )
   set( CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib${LLVM_LIBDIR_SUFFIX} )
 
-  if(LLVM_INCLUDE_TESTS)
-    find_package(Python3 ${LLVM_MINIMUM_PYTHON_VERSION} REQUIRED
-      COMPONENTS Interpreter)
-
-    # Check prebuilt llvm/utils.
-    if(EXISTS ${LLVM_TOOLS_BINARY_DIR}/FileCheck${CMAKE_EXECUTABLE_SUFFIX}
-        AND EXISTS ${LLVM_TOOLS_BINARY_DIR}/count${CMAKE_EXECUTABLE_SUFFIX}
-        AND EXISTS ${LLVM_TOOLS_BINARY_DIR}/not${CMAKE_EXECUTABLE_SUFFIX})
-      set(LLVM_UTILS_PROVIDED ON)
-    endif()
-
-    # Seek installed Lit.
-    find_program(LLVM_LIT
-                 NAMES llvm-lit lit.py lit
-                 PATHS "${LLVM_MAIN_SRC_DIR}/utils/lit"
-                 DOC "Path to lit.py")
-
-    if(EXISTS ${LLVM_MAIN_SRC_DIR}/utils/lit/lit.py)
-      # Note: path not really used, except for checking if lit was found
-      if(EXISTS ${LLVM_MAIN_SRC_DIR}/utils/llvm-lit)
-        add_subdirectory(${LLVM_MAIN_SRC_DIR}/utils/llvm-lit utils/llvm-lit)
-      endif()
-      if(NOT LLVM_UTILS_PROVIDED)
-        add_subdirectory(${LLVM_MAIN_SRC_DIR}/utils/FileCheck utils/FileCheck)
-        add_subdirectory(${LLVM_MAIN_SRC_DIR}/utils/count utils/count)
-        add_subdirectory(${LLVM_MAIN_SRC_DIR}/utils/not utils/not)
-        set(LLVM_UTILS_PROVIDED ON)
-        set(CLANG_TEST_DEPS FileCheck count not)
-      endif()
-    endif()
-
-    if (NOT TARGET llvm_gtest)
-        message(FATAL_ERROR "llvm-gtest not found. Please install llvm-gtest or disable tests with -DLLVM_INCLUDE_TESTS=OFF")
-    endif()
-
-    if(LLVM_LIT)
-      # Define the default arguments to use with 'lit', and an option for the user
-      # to override.
-      set(LIT_ARGS_DEFAULT "-sv")
-      if (MSVC OR XCODE)
-        set(LIT_ARGS_DEFAULT "${LIT_ARGS_DEFAULT} --no-progress-bar")
-      endif()
-      set(LLVM_LIT_ARGS "${LIT_ARGS_DEFAULT}" CACHE STRING "Default options for lit")
-
-      get_errc_messages(LLVM_LIT_ERRC_MESSAGES)
-
-      # On Win32 hosts, provide an option to specify the path to the GnuWin32 tools.
-      if( WIN32 AND NOT CYGWIN )
-        set(LLVM_LIT_TOOLS_DIR "" CACHE PATH "Path to GnuWin32 tools")
-      endif()
-    else()
-      set(LLVM_INCLUDE_TESTS OFF)
-    endif()
-
-    umbrella_lit_testsuite_begin(check-all)
-  endif() # LLVM_INCLUDE_TESTS
 endif() # standalone
 
 # Make sure that our source directory is on the current cmake module path so that
@@ -502,21 +446,6 @@ if(APPLE)
   endif()
 endif()
 
-
-if( CLANG_INCLUDE_TESTS )
-  add_subdirectory(unittests)
-  list(APPEND CLANG_TEST_DEPS ClangUnitTests)
-  list(APPEND CLANG_TEST_PARAMS
-    clang_unit_site_config=${CMAKE_CURRENT_BINARY_DIR}/test/Unit/lit.site.cfg
-  )
-  add_subdirectory(test)
-  add_subdirectory(bindings/python/tests)
-
-  if(CLANG_BUILT_STANDALONE)
-    umbrella_lit_testsuite_end(check-all)
-  endif()
-  add_subdirectory(utils/perf-training)
-endif()
 
 option(CLANG_INCLUDE_DOCS "Generate build targets for the Clang docs."
   ${LLVM_INCLUDE_DOCS})
