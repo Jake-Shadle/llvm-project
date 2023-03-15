@@ -36,6 +36,11 @@ void JSONNodeDumper::Visit(const Attr *A) {
   attributeOnlyIfTrue("inherited", A->isInherited());
   attributeOnlyIfTrue("implicit", A->isImplicit());
 
+  if (A->getKind() == attr::MaxFieldAlignment) {
+    // The alignment is in bits, but we convert it bytes to match the _other_ AlignedAttr
+    JOS.attribute("alignment", static_cast<const MaxFieldAlignmentAttr*>(A)->getAlignment() >> 3);
+  }
+
   // FIXME: it would be useful for us to output the spelling kind as well as
   // the actual spelling. This would allow us to distinguish between the
   // various attribute syntaxes, but we don't currently track that information
